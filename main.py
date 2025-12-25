@@ -1,14 +1,16 @@
 import os
+import sys
 
 import cv2
-from screeninfo import screeninfo
-
 from ru.kifor.fish.action_finder import ActionFinder
 from ru.kifor.fish.screen_calibration import ScreenCalibration
-
 def menu():
-    action: ActionFinder = None
-    screen: ScreenCalibration = None
+    screen: ScreenCalibration = ScreenCalibration(
+    3440, 1440, 2250,800,
+        monitor=None
+    )
+    action: ActionFinder = ActionFinder(screen)
+
     x = None
     while x != "0":
 
@@ -38,11 +40,20 @@ def menu():
                 print("Давай, иди нахуй")
                 break
 
+def test() -> bool:
+    zone = cv2.imread("images/screen.png")
+    skill_da = cv2.imread("images/reelin.png")
+    skill_net = cv2.imread("images/right.png")
+
+    x = cv2.matchTemplate(skill_da, zone, cv2.TM_CCOEFF_NORMED).max()
+    y = cv2.matchTemplate(skill_net, zone , cv2.TM_CCOEFF_NORMED).max()
+    return x > 0.7 > y
+
 if __name__ == '__main__':
-    menu()
-    # picture = cv2.imread("./images/left.png")
-    # picture = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
-    #
-    # cv2.imshow("penis", picture)
-    # cv2.waitKey(0)
+    sys.path.append("./*")
+    # print(os.getcwd())
+    if test():
+        menu()
+    else:
+        print("Пососи писос. Поделай скринов из своей игры и положи в папочку, возможно роляет разрешение экрана")
 
