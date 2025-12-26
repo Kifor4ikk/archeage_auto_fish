@@ -9,23 +9,18 @@ from ru.kifor.fish.screen_calibration import ScreenCalibration
 
 #
 image_path = "./images/"
-images_and_keys = {
-    "left.png": 'V',
-    "right.png": 'HOME',
-    "slack.png": "END",
-    "reelin.png": 'ALT+5',
-    "pull.png": "DEL"
-}
-
 
 class ActionFinder:
 
     def __init__(
             self,
-            screen_calibration: ScreenCalibration
+            screen_calibration: ScreenCalibration,
+            key_binds: dict,
+            threshold = 0.7,
     ):
         self.screen_calibration = screen_calibration
-        # сделать подгрузку картинок при поднятии приложения  чтоб не читать их каждый раз
+        self.threshold = threshold
+        self.images_and_keys = self._load_images(key_binds)
 
     def _looking_for_picture(self) -> str | None:
         # Забираем экран (буквально почти скриншот) делаем его ЧБ
@@ -38,12 +33,12 @@ class ActionFinder:
             ),
             cv2.COLOR_BGR2RGB
         )
-        for i in images_and_keys.keys():
+        for i in self.images_and_keys.keys():
             try:
-                current_image = cv2.imread(image_path + i, cv2.COLOR_BGR2RGB)
-                y = cv2.matchTemplate(image=active_zone, templ=current_image, method=cv2.TM_CCOEFF_NORMED).max()
-                if y > 0.7:
-                    return images_and_keys.get(i)
+
+                y = cv2.matchTemplate(image=active_zone, templ=self.images_and_keys.get(i), method=cv2.TM_CCOEFF_NORMED).max()
+                if y > self.threshold:
+                    return i
             except ImageNotFoundException:
                 continue
         return None
@@ -60,3 +55,9 @@ class ActionFinder:
                 time.sleep(2)
             time.sleep(0.2)
 
+    # Подгрузить 1 раз в прилу картинки при запуске, чтобы не прыгать каждый раз за ними на диск. Крч оптимизация епта
+    def _load_images(self, key_binds: dict) -> dict:
+        images_and_keys: dict = dict()
+        for i in key_binds.keys():
+            images_and_keys[key_binds.get(i)]=cv2.imread(image_path + i, cv2.COLOR_BGR2RGB)
+        return images_and_keys
