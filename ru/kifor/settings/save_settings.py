@@ -1,10 +1,10 @@
 import os
 import pickle
 
-from ru.kifor.fish.action_finder import ActionFinder
+from ru.kifor.settings.settings import Settings
 
 
-def load_data() -> ActionFinder | None:
+def load_data() -> Settings | None:
     if os.path.exists("save.piska"):
         with open("save.piska", "rb") as f:
             return pickle.load(f)
@@ -12,9 +12,9 @@ def load_data() -> ActionFinder | None:
         print("Нету файла сохранения")
         return None
 
-def save_data(action: ActionFinder):
+def save_data(setting: Settings):
     try:
         with open("save.piska", "wb") as f:
-            pickle.dump(action, f, protocol=None)
+            pickle.dump(setting, f, protocol=None)
     except Exception as e:
-        print("Не смог сохранить твою хуйню..")
+        print("Cant save ur shit..")

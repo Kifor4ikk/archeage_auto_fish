@@ -1,95 +1,80 @@
-import io
-import json
-import os
-import pickle
 import sys
-import time
+import threading
 
 import cv2
-from ru.kifor.fish.action_finder import ActionFinder
-from ru.kifor.fish.screen_calibration import ScreenCalibration
-from ru.kifor.settings.save_settings import save_data, load_data
+import keyboard
 
-def load_key_binds() -> dict:
-    with open("keybinds.json", 'rb') as f:
-        keys = json.load(f)
-        if len(keys.keys()) != 5:
-            raise Exception("У вас дохлый файл настроек кейбиндов")
-        return keys
+from ru.kifor.settings.save_settings import load_data, save_data
+from ru.kifor.settings.settings import Settings
+from ru.kifor.settings.zone import Zone
 
-def menu(act: ActionFinder | None):
-    key_binds = load_key_binds()
-    screen: ScreenCalibration = None
-    action: ActionFinder = None
-    if act:
-        action = act
-        screen = act.screen_calibration
-    else:
-        print("Йоу мне тут птица напела, что у тебя не откалиброван моник, давай уже постарайся сделать своё грязное дело")
 
-    x = None
-    while x != "0":
+def create_new_zone() -> Zone:
+    name = input("Enter name: ")
+    key = input("Enter active key name. (Exmpl F12) \nEnter: ")
+    return Zone(
+        name=name,
+        key=key
+    )
 
-        print("------------------")
-        print("Здарова заебал, выбирай:\n"
-              "1:Калибровка монитора(Включает в себя калибровку зоны фишинга)\n"
-              "2:Калибровка зоны фишинга\n"
-              "3:Работаем братья\n"
-              "4:Изменение пороговых значений для поиска картинки\n"
-              "8:Сохрани настройки\n"
-              "0: Пошел нахуй")
-        x = input("Введи говна: ")
-        print(f"Вы ввели говна: {x}")
-        match x:
-            case '1':
-                print("Калибруем ваше дерьмо")
-                screen = ScreenCalibration.calibration()
-                if action is not None:
-                    action.screen_calibration = screen
-                else:
-                    action = ActionFinder(screen, key_binds=key_binds)
-            case '2':
-                print("Калибровка каллом.")
-                if not screen:
-                    print("Не, нихуя, сначала откалибруй своё дерьмо (Пункт 1)")
-                else:
-                    screen = ScreenCalibration.choose_zone(screen.monitor)
-                    if action is not None:
-                        action.screen_calibration = screen
-                    else:
-                        action = ActionFinder(screen, key_binds=key_binds)
-            case '3':
-                print("Нажми ESC если надо остановиться!")
-                if not action:
-                    print("Ебать, а ты экранчик то калибранул, убежище?")
-                else:
-                    action.action()
-            case '4':
-                if action:
-                    x = int(input("Вводи желамое значение: "))
-                    if x <= 0 or x > 100:
-                        print("Дуралей...")
-                    else:
-                        action.threshold = x/100
-                else:
-                    print("Калбируйся сперва.")
 
-            case '8':
-                print("Сохранить нынешние настройки")
-                save_data(action)
-            case '0':
-                print("Давай, иди нахуй")
-                break
+def menu(settings: Settings | None):
+    if not settings:
+        settings = Settings()
+    while True:
+        print("Yo! Create zone or smth\n"
+              "1: Create new zone\n"
+              "2: Choose choose and rebuild another zone\n"
+              "3: Save zones\n"
+              "4: Delete zone by key\n"
+              "5: Activate/Disable zone\n"
+              "0: Exit\n"
+              "-------------------\n"
+              "Zones exists\n"
+              "-------------------"
+              )
+        for z in range(len(settings.zones)):
+            print(f"{settings.zones[z].name} - [{settings.zones[z].key}] - [{'Active' if settings.zones[z].thread is not None else 'Disabled'}]")
+        print("-------------------")
+        choice = input("Enter: ")
+        match choice:
+            case "1":
+                zone: Zone = create_new_zone()
+                zone.set_setting()
+                settings.zones.append(zone)
+                print("Zone was saved in settings!")
+            case "2":
+                for z in range(len(settings.zones)):
+                    print(f"{z+1}: {settings.zones[z].name} - [{settings.zones[z].key}]")
+                settings.zones[int((input("Enter: ")))-1].set_setting()
+            case "3":
+                save_data(settings)
+                print("saved")
+            case "4":
+                x  = input("Input zone key to delete: ")
+                for z in settings.zones:
+                    print(f"{z.key} - {x}" )
+                    if z.key == x:
+                        settings.zones.remove(z)
+            case "5":
+                x = input("Input KEY to activate ZONE checking: ")
+                for z in settings.zones:
+                    if z.key == x:
+                        z.enable()
+            case "0":
+                print("\nSee ya!")
+                return
 
-def test() -> bool:
+
+
+def test():
     zone = cv2.imread("images/screen.png")
     skill_good = cv2.imread("images/reelin.png")
     skill_bad = cv2.imread("images/right.png")
-
     x = cv2.matchTemplate(skill_good, zone, cv2.TM_CCOEFF_NORMED).max()
     y = cv2.matchTemplate(skill_bad, zone , cv2.TM_CCOEFF_NORMED).max()
-    print(f"Правильную картинку распознало с порогом {round(x*100)}%. {'Всё пиздато 'if x > 0.75 else 'Ну.. Хуеватенько.' }")
-    print(f"Не правильную картинку распознало с порогом {round(y*100)}%. {'Заебумба' if y < 0.5 else 'Слишком много, но главное чтобы ваш установленный порог оно не перешагивало'}")
+    print(f"Good data {round(x*100)}%. {'Fine! 'if x > 0.75 else 'Mm smth is wrong.' }")
+    print(f"Bad data {round(y*100)}%. {'Fine!' if y < 0.5 else 'A lot of thresholds'}")
 
 if __name__ == '__main__':
     sys.path.append("./*")
