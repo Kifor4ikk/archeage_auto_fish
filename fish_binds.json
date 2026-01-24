@@ -1,7 +1,7 @@
 {
   "left.png": "V",
-  "right.png": "HOME",
-  "slack.png": "END",
-  "reelin.png": "ALT+5",
-  "pull.png": "DEL"
+  "right.png": "L",
+  "slack.png": "N",
+  "reelin.png": "H",
+  "pull.png": "J"
 }

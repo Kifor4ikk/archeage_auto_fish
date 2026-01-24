@@ -34,7 +34,7 @@ def menu(settings: Settings | None):
               "-------------------"
               )
         for z in range(len(settings.zones)):
-            print(f"{settings.zones[z].name} - [{settings.zones[z].key}] - [{'Active' if settings.zones[z].thread is not None else 'Disabled'}]")
+            print(f"{settings.zones[z].name} - [{settings.zones[z].key}] - [{'Active' if settings.zones[z].thread is not None else 'Disabled'}] [hwnd: {settings.zones[z].hwnd} Window:{settings.zones[z].window_name}]")
         print("-------------------")
         choice = input("Enter: ")
         match choice:

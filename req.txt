@@ -3,3 +3,5 @@ pyautogui==0.9.54
 pyscreeze==1.0.1
 screeninfo==0.8.1
 keyboard==0.13.5
+PyWin32==311
+pydub==0.25.1
