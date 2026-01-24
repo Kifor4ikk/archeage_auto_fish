@@ -33,6 +33,7 @@ class Zone:
         self.size_x = 200
         self.size_y = 100
         self.images_and_keys = dict()
+        self.key_and_image_name = dict()
         self.threshold = 0.7
         self.name = name
         self.key = key
@@ -58,18 +59,18 @@ class Zone:
             )
 
 
-    def _look_for_picture(self) -> str | None:
+    def _look_for_picture(self) -> (str | None, str | None):
         # Забираем экран (буквально почти скриншот)
         active_zone = self._get_picture()
         for i in self.images_and_keys.keys():
             try:
                 y = cv2.matchTemplate(image=active_zone, templ=self.images_and_keys.get(i), method=cv2.TM_CCOEFF_NORMED).max()
                 if y > self.threshold:
-                    return i
+                    return i, self.key_and_image_name.get(i)
             except ImageNotFoundException:
                 print("Image was not found...")
                 continue
-        return None
+        return None, None
 
     def _action(self):
         prev_key = None
@@ -89,7 +90,7 @@ class Zone:
             if keyboard.is_pressed(self.key):
                 break
             # Active work zone
-            key = self._look_for_picture()
+            key, image = self._look_for_picture()
             if key:
                 if prev_key != key and last_press_time + datetime.timedelta(seconds=self.delay) < datetime.datetime.now():
                     notify_fish_killed = False
@@ -102,12 +103,12 @@ class Zone:
                         global_fishing_time = datetime.datetime.now()
 
                     # Try to avoid
-                    if counter > 3 or key in ['H', 'J']:
-                        print(f"<{self.name}> try to press [{key}] {' <- DAMAGE' if key in ['H', 'J'] else ''}")
+                    if counter > 3 or image in ['reelin.png', 'pull.png']:
+                        print(f"<{self.name}> try to press [{key}] {image if image in ['reelin.png', 'pull.png'] else ''}")
                         self._press_key(key)
                         counter = 0
                     else:
-                        print(f"<{self.name}> avoid key pressing [{key}]")
+                        print(f"<{self.name}> avoid key pressing [{key}] {image}")
                         counter+=1
             # CURRENT FISH
             if last_press_time + datetime.timedelta(seconds=8) < datetime.datetime.now() and not notify_fish_killed:
@@ -170,16 +171,17 @@ class Zone:
 
     # Подгрузить 1 раз в прилу картинки при запуске, чтобы не прыгать каждый раз за ними на диск. Крч оптимизация епта
     def _load_images(self) -> dict:
-        images_and_keys = dict()
+        self.images_and_keys = dict()
+        self.key_and_image_name = dict()
         print("Enter keybinds file name. Exmpl: fish_binds.json")
         try:
             with open(input("Enter: "), 'rb') as f:
                 data =  json.load(f)
                 print(data)
             for i in data.keys():
-                images_and_keys[data.get(i)]=cv2.imread(self.image_path + i, cv2.COLOR_BGR2RGB)
-            self.images_and_keys = images_and_keys
-            return images_and_keys
+                self.images_and_keys[data.get(i)]=cv2.imread(self.image_path + i, cv2.COLOR_BGR2RGB)
+                self.key_and_image_name[data.get(i)]=i
+            return self.images_and_keys
         except Exception as e:
             print(e)
             print("Cant load file")
