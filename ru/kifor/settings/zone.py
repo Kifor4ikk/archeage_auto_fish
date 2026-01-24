@@ -108,7 +108,7 @@ class Zone:
                         self._press_key(key)
                         counter = 0
                     else:
-                        print(f"<{self.name}> avoid key pressing [{key}] {image}")
+                        print(f"<{self.name}> avoid key pressing [{key}] {image:}")
                         counter+=1
             # CURRENT FISH
             if last_press_time + datetime.timedelta(seconds=8) < datetime.datetime.now() and not notify_fish_killed:
