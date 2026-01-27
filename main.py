@@ -4,6 +4,7 @@ import threading
 import cv2
 import keyboard
 
+from ru.kifor.settings.fish_zone import FishZone
 from ru.kifor.settings.save_settings import load_data, save_data
 from ru.kifor.settings.settings import Settings
 from ru.kifor.settings.zone import Zone
@@ -12,10 +13,23 @@ from ru.kifor.settings.zone import Zone
 def create_new_zone() -> Zone:
     name = input("Enter name: ")
     key = input("Enter active key name. (Exmpl F12) \nEnter: ")
-    return Zone(
-        name=name,
-        key=key
-    )
+    choice = input("Choose zone type\n1: Basic zone\n2: Fishing zone\nEnter: ")
+
+    match choice:
+        case "1":
+            return Zone(
+                name=name,
+                key=key
+            )
+        case "2":
+            return FishZone(
+                name=name,
+                key=key
+            )
+    raise ValueError("Wrong choice")
+
+
+
 
 
 def menu(settings: Settings | None):
@@ -39,7 +53,7 @@ def menu(settings: Settings | None):
         choice = input("Enter: ")
         match choice:
             case "1":
-                zone: Zone = create_new_zone()
+                zone = create_new_zone()
                 zone.set_setting()
                 settings.zones.append(zone)
                 print("Zone was saved in settings!")
